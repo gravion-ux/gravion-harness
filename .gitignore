@@ -1,0 +1,23 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Harness output
+report.md
+report.json
+gravion-audit.jsonl
+*.audit.jsonl
+
+# Operator files — these hold your authorisation and may contain private data
+scope.json
+policy.json
+targets.txt
+targets.json
+engagement/
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

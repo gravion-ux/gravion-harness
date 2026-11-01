@@ -1,0 +1,39 @@
+{
+  "name": "gravion-harness",
+  "version": "0.1.0",
+  "description": "AI-assisted security testing harness for authorized targets, with scoped targets, approval controls, sandboxed execution and tamper-evident audit logs.",
+  "license": "MIT",
+  "author": "gravion-ux",
+  "type": "commonjs",
+  "main": "src/harness.js",
+  "bin": {
+    "gravion-harness": "src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/redact.js && node --check src/scope.js && node --check src/approval.js && node --check src/access.js && node --check src/audit.js && node --check src/sandbox.js && node --check src/probe.js && node --check src/targets.js && node --check src/findings.js && node --check src/report.js && node --check src/checkers.js && node --check src/wellknown.js && node --check src/engine.js && node --check src/commands.js && node --check src/chat.js && node --check src/server.js && node --check src/cli.js && node --check src/harness.js && node --check src/providers/index.js && node --check src/providers/plan.js && node --check src/providers/deterministic.js && node --check src/providers/openai.js && node --check src/providers/anthropic.js",
+    "start": "node src/cli.js"
+  },
+  "files": [
+    "src",
+    "web",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "security",
+    "pentesting",
+    "harness",
+    "ai",
+    "audit",
+    "sandbox"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
