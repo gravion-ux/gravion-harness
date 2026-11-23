@@ -27,6 +27,15 @@ const SECURITY_HEADERS = Object.freeze([
     tags: ['headers', 'hardening'],
   },
   {
+    header: 'strict-transport-security',
+    severity: 'low',
+    title: 'Missing Strict-Transport-Security header',
+    description: 'The response does not send a Strict-Transport-Security header, so browsers are not told to refuse plain HTTP for this host once they have seen it over HTTPS.',
+    impact: 'A downgraded or first connection can be intercepted before the redirect to HTTPS happens, which exposes cookies and credentials in transit.',
+    remediation: 'Send Strict-Transport-Security with a long max-age, for example "max-age=31536000; includeSubDomains", on every HTTPS response.',
+    tags: ['headers', 'transport-security'],
+  },
+  {
     header: 'x-content-type-options',
     severity: 'low',
     title: 'Missing X-Content-Type-Options header',
@@ -139,6 +148,101 @@ function headerValue(headers, name) {
 }
 
 /**
+ * Returns every value of a header. A header map can hold a single string or
+ * an array (Set-Cookie is the usual case), so lookups that care about all of
+ * them go through here.
+ *
+ * @param {object} headers
+ * @param {string} name
+ * @returns {string[]}
+ */
+function headerValues(headers, name) {
+  if (!headers || typeof headers !== 'object') {
+    return [];
+  }
+  const wanted = name.toLowerCase();
+  const values = [];
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() !== wanted) {
+      continue;
+    }
+    if (Array.isArray(value)) {
+      values.push(...value.map(String));
+    } else if (value !== undefined && value !== null) {
+      values.push(String(value));
+    }
+  }
+  return values;
+}
+
+/**
+ * Splits a combined Set-Cookie header value into individual cookies.
+ *
+ * Intermediaries sometimes join several Set-Cookie headers into one string.
+ * A comma only starts a new cookie when it is followed by a cookie name and
+ * an equals sign, which keeps the comma inside an `Expires` date (for
+ * example `Expires=Wed, 21 Oct 2015 07:28:00 GMT`) from splitting a cookie
+ * in half. A comma inside a quoted cookie value can still fool this, which
+ * is why the prober captures the cookies separately whenever it can.
+ *
+ * @param {string} value
+ * @returns {string[]}
+ */
+function splitSetCookieHeader(value) {
+  const text = String(value || '');
+  if (!text) {
+    return [];
+  }
+  return text
+    .split(/,(?=\s*[^\s;,=]+[ \t]*=)/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Parses one Set-Cookie value into its name, value and attributes.
+ * Attribute names are lower-cased; flag attributes (Secure, HttpOnly) are
+ * recorded as `true`.
+ *
+ * @param {string} raw
+ * @returns {{name: string, value: string, attributes: object}|null}
+ */
+function parseSetCookie(raw) {
+  const text = String(raw || '').trim();
+  if (!text) {
+    return null;
+  }
+
+  const parts = text.split(';');
+  const first = parts[0].trim();
+  const equals = first.indexOf('=');
+  const name = (equals === -1 ? first : first.slice(0, equals)).trim();
+  if (!name) {
+    return null;
+  }
+
+  const attributes = {};
+  for (const part of parts.slice(1)) {
+    const segment = part.trim();
+    if (!segment) {
+      continue;
+    }
+    const attrEquals = segment.indexOf('=');
+    if (attrEquals === -1) {
+      attributes[segment.toLowerCase()] = true;
+    } else {
+      attributes[segment.slice(0, attrEquals).trim().toLowerCase()] = segment.slice(attrEquals + 1).trim();
+    }
+  }
+
+  return {
+    name,
+    value: equals === -1 ? '' : first.slice(equals + 1).trim(),
+    attributes,
+  };
+}
+
+/**
  * Builds the evidence block that is stored with a finding.
  *
  * @param {object} context
@@ -207,6 +311,119 @@ function checkSecurityHeaders(context) {
       tags: spec.tags,
       program: context.program,
     }));
+  }
+
+  return findings;
+}
+
+/**
+ * Checks the cookies the response sets.
+ *
+ * The cookie values come from `probe.cookies` when the prober captured them
+ * separately, and fall back to the Set-Cookie header otherwise. Only the
+ * attributes are examined — a cookie value is evidence, not something to
+ * judge.
+ *
+ * @param {object} context
+ * @returns {object[]}
+ */
+function checkCookies(context) {
+  const probe = context.probe || {};
+  if (!probe.ok) {
+    return [];
+  }
+
+  let rawCookies = [];
+  if (Array.isArray(probe.cookies) && probe.cookies.length) {
+    rawCookies = probe.cookies.map(String);
+  } else {
+    for (const value of headerValues(probe.headers, 'set-cookie')) {
+      rawCookies.push(...splitSetCookieHeader(value));
+    }
+  }
+  if (!rawCookies.length) {
+    return [];
+  }
+
+  const findings = [];
+  const isHttps = String(probe.url || '').startsWith('https:');
+  const baseSteps = [
+    `Request ${probe.method || 'GET'} ${probe.url}`,
+    'Inspect the Set-Cookie response headers',
+  ];
+
+  for (const raw of rawCookies) {
+    const cookie = parseSetCookie(raw);
+    if (!cookie) {
+      continue;
+    }
+    const { attributes } = cookie;
+    const hasSecure = attributes.secure === true;
+    const sameSite = typeof attributes.samesite === 'string'
+      ? attributes.samesite.toLowerCase()
+      : null;
+
+    if (sameSite === 'none' && !hasSecure) {
+      findings.push(createFinding({
+        title: `Cookie "${cookie.name}" uses SameSite=None without the Secure attribute`,
+        severity: 'medium',
+        category: 'cookie-security',
+        target: context.target,
+        description: `The cookie "${cookie.name}" is set with SameSite=None, which sends it on cross-site requests, but without the Secure attribute. Current browsers reject that combination, and a client that accepts it sends the cookie cross-site over plaintext connections too.`,
+        impact: 'The cookie is attached to cross-site requests without transport protection, which widens its exposure to interception and cross-site request forgery.',
+        remediation: 'Add the Secure attribute alongside SameSite=None, or narrow the attribute to Lax or Strict if the cookie does not need to travel cross-site.',
+        steps: [...baseSteps, `Observe that cookie "${cookie.name}" carries SameSite=None and no Secure attribute`],
+        evidence: buildEvidence(context),
+        tags: ['cookies', 'cross-site'],
+        program: context.program,
+      }));
+    } else if (isHttps && !hasSecure) {
+      findings.push(createFinding({
+        title: `Cookie "${cookie.name}" is set without the Secure attribute`,
+        severity: 'low',
+        category: 'cookie-security',
+        target: context.target,
+        description: `The response was served over HTTPS, but the cookie "${cookie.name}" is set without the Secure attribute, so the browser will also send it over plain HTTP.`,
+        impact: 'If any page or redirect on the host is reachable over HTTP, the cookie travels in cleartext and can be captured on the network path.',
+        remediation: 'Set the Secure attribute on every cookie issued by an HTTPS application.',
+        steps: [...baseSteps, `Observe that cookie "${cookie.name}" has no Secure attribute`],
+        evidence: buildEvidence(context),
+        tags: ['cookies', 'hardening'],
+        program: context.program,
+      }));
+    }
+
+    if (attributes.httponly !== true) {
+      findings.push(createFinding({
+        title: `Cookie "${cookie.name}" is set without the HttpOnly attribute`,
+        severity: 'low',
+        category: 'cookie-security',
+        target: context.target,
+        description: `The cookie "${cookie.name}" is set without the HttpOnly attribute, so it is readable from page JavaScript through document.cookie.`,
+        impact: 'Any script running in the page — including one injected through a cross-site scripting flaw — can read and exfiltrate the cookie value.',
+        remediation: 'Set the HttpOnly attribute on cookies that page JavaScript does not need to read, in particular session cookies.',
+        steps: [...baseSteps, `Observe that cookie "${cookie.name}" has no HttpOnly attribute`],
+        evidence: buildEvidence(context),
+        tags: ['cookies', 'hardening'],
+        program: context.program,
+      }));
+    }
+
+    if (!sameSite) {
+      findings.push(createFinding({
+        title: `Cookie "${cookie.name}" is set without a SameSite attribute`,
+        severity: 'info',
+        category: 'cookie-security',
+        target: context.target,
+        description: `The cookie "${cookie.name}" is set without a SameSite attribute, so whether it is attached to cross-site requests is left to each browser's default.`,
+        impact: 'Browser defaults differ and change over time; an explicit attribute is the only way to state the intended cross-site behaviour, which matters for cross-site request forgery exposure.',
+        remediation: 'Set SameSite=Lax unless the cookie must travel cross-site, in which case use SameSite=None together with Secure.',
+        steps: [...baseSteps, `Observe that cookie "${cookie.name}" has no SameSite attribute`],
+        evidence: buildEvidence(context),
+        tags: ['cookies', 'hardening'],
+        program: context.program,
+      }));
+    }
   }
 
   return findings;
@@ -371,6 +588,7 @@ function checkTls(context) {
  */
 const CHECKS = Object.freeze({
   security_headers: checkSecurityHeaders,
+  cookies: checkCookies,
   info_exposure: checkInfoExposure,
   status: checkStatus,
   tls: checkTls,
@@ -397,10 +615,14 @@ module.exports = {
   EXPOSURE_PATTERNS,
   SECURITY_HEADERS,
   buildEvidence,
+  checkCookies,
   checkInfoExposure,
   checkSecurityHeaders,
   checkStatus,
   checkTls,
   headerValue,
+  headerValues,
+  parseSetCookie,
   runCheck,
+  splitSetCookieHeader,
 };
