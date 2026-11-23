@@ -17,7 +17,7 @@
  *     "method": "GET",
  *     "tool": "curl",
  *     "args": ["-sS", "https://app.example.com/"],
- *     "check": ["security_headers", "info_exposure", "status"],
+ *     "check": ["security_headers", "cookies", "info_exposure", "status"],
  *     "rationale": "why this step matters"
  *   }
  *
@@ -41,7 +41,7 @@ const SCHEMA_TEXT = `{
       "method": "GET | HEAD | POST | PUT | PATCH | DELETE (http only, default GET)",
       "tool": "executable name (command only)",
       "args": ["array", "of", "string", "arguments (command only)"],
-      "check": ["security_headers | info_exposure | status | tls"],
+      "check": ["security_headers | cookies | info_exposure | status | tls"],
       "rationale": "why this step is worth running"
     }
   ]
