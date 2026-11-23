@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-11-24
+
+### Added
+
+- **Cookie check** (`src/checkers.js`) — a new built-in check, `cookies`,
+  that examines every `Set-Cookie` a response carries: a cookie set over
+  HTTPS without the `Secure` attribute, a cookie without `HttpOnly`, a
+  cookie without a `SameSite` attribute, and the `SameSite=None` without
+  `Secure` combination (reported once, as medium). The offline planner now
+  runs it as part of the baseline request, and hosted providers can name it
+  in a step like any other check.
+- **Cookie capture in the prober** (`src/probe.js`) — a probe result now
+  carries `cookies`, the response's `Set-Cookie` values in order, taken
+  from `Headers.getSetCookie()`. The header map cannot hold more than one
+  value per name, so without this the cookie check would only ever have
+  seen the last cookie a response set.
+- **Coverage reporting** — `npm run coverage` runs the suite with the Node
+  test runner's built-in coverage and writes `lcov.info`; CI uploads it to
+  Codecov from the Node 22 leg. No new dependencies: the coverage tooling
+  is the runtime's own.
+
+### Changed
+
+- **Strict-Transport-Security is now actually checked.** The header check
+  already had a rule to skip HSTS on plain-HTTP responses, but the header
+  itself was missing from the expected list, so the rule never fired. An
+  HTTPS response without the header now reports it; an HTTP response still
+  does not.
+
 ## [0.1.0] — 2026-10-29
 
 First release.
@@ -53,4 +82,5 @@ First release.
   sandbox, targets, engine, providers, findings, reports, the command router
   and the web API.
 
+[0.2.0]: https://github.com/gravion-ux/gravion-harness/releases/tag/v0.2.0
 [0.1.0]: https://github.com/gravion-ux/gravion-harness/releases/tag/v0.1.0
