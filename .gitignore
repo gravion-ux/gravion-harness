@@ -2,6 +2,10 @@
 node_modules/
 npm-debug.log*
 
+# Coverage
+lcov.info
+coverage/
+
 # Harness output
 report.md
 report.json
