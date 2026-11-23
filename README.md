@@ -1,5 +1,7 @@
 # Gravion Harness
 
+[![CI](https://github.com/gravion-ux/gravion-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/gravion-ux/gravion-harness/actions/workflows/ci.yml)
+
 An AI-assisted security testing harness that runs **only** against targets you
 are authorised to test.
 
