@@ -47,8 +47,8 @@ async function propose(request = {}) {
       kind: 'http',
       target: { type: 'url', value: rule.value },
       method: 'GET',
-      check: ['security_headers', 'info_exposure', 'status'],
-      rationale: 'Establishes the baseline response, its headers and anything the body exposes.',
+      check: ['security_headers', 'cookies', 'info_exposure', 'status'],
+      rationale: 'Establishes the baseline response, its headers, the cookies it sets and anything the body exposes.',
     });
 
     if (parsed.protocol === 'https:') {
