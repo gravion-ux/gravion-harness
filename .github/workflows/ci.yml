@@ -35,3 +35,17 @@ jobs:
 
       - name: Run the test suite
         run: npm test
+
+      # Coverage uses the Node test runner's built-in coverage and lcov
+      # reporter (Node >= 22), so it runs on the newest matrix leg only.
+      - name: Generate coverage
+        if: matrix.node-version == '22'
+        run: npm run coverage
+
+      - name: Upload coverage to Codecov
+        if: matrix.node-version == '22'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
