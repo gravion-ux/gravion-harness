@@ -1,6 +1,7 @@
 # Gravion Harness
 
 [![CI](https://github.com/gravion-ux/gravion-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/gravion-ux/gravion-harness/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/gravion-ux/gravion-harness/branch/main/graph/badge.svg)](https://codecov.io/gh/gravion-ux/gravion-harness)
 
 An AI-assisted security testing harness that runs **only** against targets you
 are authorised to test.
@@ -198,7 +199,7 @@ harness inside a container or a VM if you need that.
 
 ## Findings and evidence
 
-Built-in checks: `security_headers`, `info_exposure`, `status`, `tls`.
+Built-in checks: `security_headers`, `cookies`, `info_exposure`, `status`, `tls`.
 
 Every finding keeps the raw response it came from — request, status, headers,
 body excerpt, redirect chain, timing — so the report shows the evidence rather
@@ -215,13 +216,15 @@ than only the conclusion. A finding without evidence is an opinion.
 ## Development
 
 ```bash
-npm test     # 127 tests, node:test, no runner needed
+npm test     # 142 tests, node:test, no runner needed
 npm run check  # syntax check every source file
+npm run coverage  # the suite with coverage, writes lcov.info (Node >= 22)
 ```
 
 The suite covers scope matching, approval policy, access modes, the audit
-chain, redaction, sandbox execution, target parsing, the engine, the command
-router and the local web API.
+chain, redaction, sandbox execution, target parsing, the engine, the checks
+(including the cookie check), the command router and the local web API. CI
+uploads the coverage report to Codecov.
 
 ## Licence
 
