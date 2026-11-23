@@ -144,7 +144,10 @@ harness.run(objective)
 
 ## Testing
 
-127 tests with `node:test`, no runner and no coverage tooling. The suite
+142 tests with `node:test` and no runner. Coverage comes from the test
+runner's own coverage support (`npm run coverage`, lcov output) and is
+uploaded to Codecov from CI, so there is still no extra tooling and no
+dependency. The suite
 covers each module's contract and the engine's decisions, including the
 boundary cases that matter:
 
