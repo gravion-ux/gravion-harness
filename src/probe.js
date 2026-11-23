@@ -93,6 +93,11 @@ async function requestOnce(url, options = {}) {
       status: response.status,
       statusText: response.statusText,
       headers: Object.fromEntries(response.headers.entries()),
+      // The header map above cannot hold more than one Set-Cookie value, so
+      // the cookies are captured separately, in order, for the cookie check.
+      cookies: typeof response.headers.getSetCookie === 'function'
+        ? response.headers.getSetCookie()
+        : [],
       body: body.text,
       bodyBytes: body.bytes,
       bodyTruncated: body.truncated,
@@ -107,6 +112,7 @@ async function requestOnce(url, options = {}) {
       status: null,
       statusText: null,
       headers: {},
+      cookies: [],
       body: '',
       bodyBytes: 0,
       bodyTruncated: false,
@@ -196,6 +202,7 @@ async function probeHttp(url, options = {}) {
     status: null,
     statusText: null,
     headers: {},
+    cookies: [],
     body: '',
     bodyBytes: 0,
     bodyTruncated: false,
