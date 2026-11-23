@@ -80,6 +80,7 @@ test('a header that is present is not reported', () => {
       url: 'https://example.com/',
       headers: {
         'content-security-policy': "default-src 'self'",
+        'strict-transport-security': 'max-age=31536000; includeSubDomains',
         'x-content-type-options': 'nosniff',
         'x-frame-options': 'SAMEORIGIN',
         'referrer-policy': 'no-referrer',
