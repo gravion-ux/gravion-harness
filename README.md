@@ -15,7 +15,7 @@ evidence, and writes a tamper-evident audit log of every decision.
 It is operated by chat and by voice, in a terminal or in a local browser
 console.
 
-**Zero runtime dependencies.** Node built-ins only. Node >= 18.
+**Zero runtime dependencies.** Node built-ins only. Node >= 20.
 
 ---
 
