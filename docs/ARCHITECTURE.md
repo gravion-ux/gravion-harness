@@ -118,7 +118,7 @@ safer boundary. Do not bind it to a public interface.
 **Zero runtime dependencies.** Node built-ins only. The value of this tool is
 the safety machinery, and a dependency is a supply-chain risk in the thing
 whose job is to run code. It also means the harness runs on any machine with
-Node 18+, with no install step and no lockfile to rot.
+Node 20+, with no install step and no lockfile to rot.
 
 ## The flow of an engagement
 
