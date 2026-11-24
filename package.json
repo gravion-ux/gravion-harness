@@ -33,7 +33,7 @@
     "sandbox"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {},
   "devDependencies": {}
