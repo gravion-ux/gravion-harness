@@ -23,7 +23,7 @@ step is refused.
 
 ## Development setup
 
-Requires Node.js 18 or newer. There is nothing to install:
+Requires Node.js 20 or newer. There is nothing to install:
 
 ```bash
 git clone https://github.com/gravion-ux/gravion-harness.git
@@ -38,7 +38,7 @@ npm run check   # syntax-check every source file
 npm test        # node --test — the full suite
 ```
 
-CI runs both on Node 18, 20 and 22.
+CI runs both on Node 20 and 22.
 
 ## Code style
 
