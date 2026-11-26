@@ -1,10 +1,10 @@
+<p align="center"><img src="assets/banner.svg" alt="gravion-harness banner" width="100%"/></p>
+
 # Gravion Harness
 
-[![CI](https://github.com/gravion-ux/gravion-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/gravion-ux/gravion-harness/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/gravion-ux/gravion-harness/branch/main/graph/badge.svg)](https://codecov.io/gh/gravion-ux/gravion-harness)
+[![CI](https://github.com/gravion-ux/gravion-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/gravion-ux/gravion-harness/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-An AI-assisted security testing harness that runs **only** against targets you
-are authorised to test.
+**An AI-assisted security testing harness that runs only against targets you are authorised to test.**
 
 Give it a target list, an objective and a provider (a local model, a hosted
 API, or the built-in offline planner). It plans the work, checks every proposed
